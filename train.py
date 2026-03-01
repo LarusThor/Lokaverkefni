@@ -10,7 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, get_cosine_schedule_with_warmup
 
-from src.dataset import MercariTextDataset
+from dataset import MercariTextDataset
 from src.model import PriceRegressor
 from src.evaluate import evaluate_loader
 
