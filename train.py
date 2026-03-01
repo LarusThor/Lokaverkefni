@@ -49,6 +49,21 @@ def train_from_csv(train_csv: str, val_csv: str, cfg: TrainConfig):
     train_df = pd.read_csv(train_csv)
     val_df = pd.read_csv(val_csv)
 
+    # --- minimal cleaning ---
+
+    # Keep only necessary columns
+    cols = ["train_id", "name", "item_description", "price"]
+    train_df = train_df[cols]
+    val_df   = val_df[cols]
+
+    # Remove non-positive prices (recommended)
+    train_df = train_df[train_df["price"] > 0].reset_index(drop=True)
+    val_df   = val_df[val_df["price"] > 0].reset_index(drop=True)
+
+    # Replace placeholder descriptions
+    train_df["item_description"] = train_df["item_description"].replace("No description yet", "")
+    val_df["item_description"]   = val_df["item_description"].replace("No description yet", "")
+
     train_ds = MercariTextDataset(train_df, tokenizer, max_length=cfg.max_length, has_labels=True)
     val_ds = MercariTextDataset(val_df, tokenizer, max_length=cfg.max_length, has_labels=True)
 
