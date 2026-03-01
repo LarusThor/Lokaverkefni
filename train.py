@@ -8,6 +8,7 @@ from dataclasses import dataclass, asdict
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 from transformers import AutoTokenizer, get_cosine_schedule_with_warmup
 
 from dataset import MercariTextDataset
@@ -91,11 +92,16 @@ def train_from_csv(train_csv: str, val_csv: str, cfg: TrainConfig):
 
     best_val_rmse = float("inf")
 
+    # Track metrics each epoch for plotting (written to CSV for Colab-friendly analysis)
+    history = []
+    history_path = os.path.join(cfg.out_dir, "history.csv")
+
     for epoch in range(1, cfg.num_epochs + 1):
         model.train()
         running = 0.0
 
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{cfg.num_epochs}", leave=False)
+        for batch_idx, batch in enumerate(pbar, start=1):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"].to(device)
@@ -107,19 +113,32 @@ def train_from_csv(train_csv: str, val_csv: str, cfg: TrainConfig):
                 loss = out.loss
 
             scaler.scale(loss).backward()
-
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
-
             scaler.step(optimizer)
             scaler.update()
             scheduler.step()
 
             running += float(loss.item())
 
+            # Live training feedback in progress bar (loss is MSE on log1p scale)
+            avg_so_far = running / batch_idx
+            pbar.set_postfix(train_mse=f"{avg_so_far:.4f}", lr=f"{optimizer.param_groups[0]['lr']:.2e}")
+
         avg_loss = running / max(1, len(train_loader))
         val_metrics = evaluate_loader(model, val_loader, device=device)
         val_rmse = val_metrics["rmse"]
+
+        # Log metrics + LR each epoch (train_mse is on log1p scale; val metrics on original price scale)
+        current_lr = optimizer.param_groups[0]["lr"]
+        history.append({
+            "epoch": epoch,
+            "train_mse": avg_loss,
+            "val_rmse": val_metrics["rmse"],
+            "val_mae": val_metrics["mae"],
+            "lr": current_lr,
+        })
+        pd.DataFrame(history).to_csv(history_path, index=False)
 
         print(
             f"Epoch {epoch}/{cfg.num_epochs} | "
