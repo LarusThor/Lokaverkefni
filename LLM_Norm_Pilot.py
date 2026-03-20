@@ -63,8 +63,8 @@ def normalize_single(client: OpenAI, text: str, prompt_text: str) -> str:
 
 
 def run_pilot(input_path: str, output_path: str, n: int):
-    client = OpenAI(api_key="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")
-
+    #client = OpenAI(api_key="your-api-key")
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     print(f"Loading {input_path}...")
     df = pd.read_csv(input_path)
 
