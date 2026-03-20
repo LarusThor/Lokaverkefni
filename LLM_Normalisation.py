@@ -138,7 +138,7 @@ def download_batch_results(client: OpenAI, output_file_id: str) -> dict[str, str
 # ── Main pipeline ─────────────────────────────────────────────────────────────
 
 def normalize(input_path: str, output_path: str, prompt_id: int):
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    #client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     prompt_text = PROMPTS[prompt_id]
 
     tmp_dir = Path("tmp_normalization")
