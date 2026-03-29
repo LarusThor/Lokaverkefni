@@ -20,20 +20,29 @@ PROMPTS = {
         "Your task is to rewrite product listings into clear, fluent prose descriptions. "
         "Expand all abbreviations and acronyms. Correct spelling errors. Normalize condition descriptions "
         "(e.g. 'gr8 cond' → 'great condition'). Improve sentence structure and clarity. "
-        "Interpret and clarify vague or non-standard product descriptions using context "
-        "(e.g. 'skin energy drink' → 'facial moisturizer'). "
-        "Remove irrelevant seller noise such as shipping policy, payment warnings, follower requests, "
-        "and self-promotional text — keep only information relevant to the product itself. "
+        "Only interpret vague or non-standard terms when the meaning cannot be understood as written "
+        "(e.g. 'skin energy drink' → 'facial moisturizer'). Do not add descriptive language, "
+        "use cases, or editorial commentary that is not present in the original listing. "
+        "Remove self-promotional seller noise such as follower requests, discount offers for bundles, "
+        "and unsolicited personal appeals — keep only information relevant to the product itself. "
         "IMPORTANT: Preserve all factual details exactly — brand names, model numbers, storage sizes, "
         "colors, and specifications must not be altered, invented, or removed. "
+        "Preserve the original sentiment and intensity of descriptive language — do not upgrade or "
+        "downgrade adjectives (e.g. 'great' must not become 'fantastic', 'okay' must not become 'good'). "
         "Return only the rewritten listing as plain prose, no bullet points or headers."
     ),
     2: (
-        "You are a text normalizer for price prediction. Rewrite the product listing as clean, "
-        "plain prose: expand abbreviations, fix spelling, normalize informal language, interpret vague "
-        "or creative product descriptions into standard terminology, and remove irrelevant seller text "
-        "such as shipping notes or payment warnings. "
-        "Do not change or invent any factual details. Return only the rewritten text, no bullet points."
+        "You are a product attribute extractor for a price prediction system. "
+        "Given a raw marketplace listing, extract and reformat the information into a structured "
+        "template using only details explicitly present or clearly implied by the listing. "
+        "Use this exact format:\n"
+        "Item: [product type]. Brand: [brand or 'Unknown']. Model: [model/version or 'N/A']. "
+        "Color: [color or 'N/A']. Size: [size/storage/dimensions or 'N/A']. "
+        "Condition: [condition in standard terms, e.g. 'new', 'like new', 'good', 'fair', 'poor']. "
+        "Features: [key specs or attributes, comma-separated, or 'N/A']. "
+        "Description: [one sentence summary of the item in plain English].\n"
+        "Do not invent, infer beyond what is stated, or include seller notes, shipping info, "
+        "or payment warnings. If a field cannot be determined, use 'N/A' or 'Unknown'."
     ),
 }
 
@@ -63,8 +72,7 @@ def normalize_single(client: OpenAI, text: str, prompt_text: str) -> str:
 
 
 def run_pilot(input_path: str, output_path: str, n: int):
-    #client = OpenAI(api_key="your-api-key")
-    #client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     print(f"Loading {input_path}...")
     df = pd.read_csv(input_path)
 
